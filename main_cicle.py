@@ -1,6 +1,7 @@
 import os
 import sys
 import pygame
+import math
 
 
 def load_image(name, colorkey=None):
@@ -19,17 +20,43 @@ def load_image(name, colorkey=None):
         image = image.convert_alpha()
     return image
 
+class Bullet:
+    def __init__(self, pos, color=pygame.Color('white'), speed=10, vector=math.pi * 3 / 4, radius=10, rico=9999):
+        self.speed = speed
+        self.rico = rico
+        self.pos = pos
+        self.vect = [math.cos(vector), math.sin(vector)]
+        self.radius = radius
+        self.color = color
+
+    def move(self):
+        self.pos = (self.pos[0] + int(self.vect[0] * 4), self.pos[1] - int(self.vect[1] * 4))
+        pygame.draw.circle(screen, self.color, self.pos, self.radius, 0)
+
+
 class Weapon:
-    def __init__(self, screen, x, y, sprite, shooting_sprite): # + sprite
+    def __init__(self, x, y, sprite, shooting_sprite): # + sprite
         self.x, self.y = x, y
         self.spr = sprite
         self.shoot_spr = shooting_sprite
-        self.V = [0, 0]  # y x
+
+    def shoot(self, coords, mouse):
+        global entity_list
+        delta = (mouse[0] - coords[0], mouse[1] - coords[1])
+        cos = delta[1] / math.sqrt(delta[1]**2 + delta[0]**2)
+        color = (255, 255, 255)
+        if delta[0] < 0:
+            vec = math.asin(cos) + math.pi
+        else:
+            vec = math.asin(cos) * -1
+        entity_list.append(Bullet(coords, color, vector=vec, radius=2))
+
+
+
 
 class Entity:
-    def __init__(self, screen, x, y, max_health, sprite): # + sprite
+    def __init__(self, max_health, sprite): # + sprite
         self.max_health, self.health = max_health, max_health
-        self.x, self.y = x, y
         self.spr = sprite
         self.V = [0, 0]  # y x
 
@@ -52,6 +79,9 @@ class Entity:
     def get_v(self):
         return self.V
 
+    def get_coords(self):
+        return self.spr.rect.y, self.spr.rect.x
+
 class Hero(Entity):
     pass
 
@@ -67,22 +97,25 @@ if __name__ == '__main__':
     clock = pygame.time.Clock()
     f = False
 
+    entity_list = []
     all_sprites = pygame.sprite.Group()
     hero_sprite = pygame.sprite.Sprite()
-    hero_sprite.image = load_image("mouse.png", colorkey=-1)
+    hero_sprite.image = load_image("dude.png", colorkey=-1)
     hero_sprite.rect = hero_sprite.image.get_rect()
     hero_sprite.rect.x = 5
     hero_sprite.rect.y = 20
     all_sprites.add(hero_sprite)
     all_sprites.draw(screen)
-
-    hero = Hero(hero_sprite)
+    wep = Weapon(1, 1, hero_sprite, hero_sprite)
+    hero = Hero(20, hero_sprite)
+    entity_list.append(hero)
 
     running = True
     while running:
         pygame.display.flip()
         t = clock.tick()
-        hero.move()
+        for i in entity_list:
+            i.move()
         clock.tick(fps)
         all_sprites.draw(screen)
         for event in pygame.event.get():
@@ -90,24 +123,31 @@ if __name__ == '__main__':
                 running = False
 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_w:
-                hero.change_v([-200], [])
+                hero.change_v([-300], [])
             if event.type == pygame.KEYUP and event.key == pygame.K_w:
                 hero.change_v([0], [])
 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_s:
-                hero.change_v([200], [])
+                hero.change_v([300], [])
             if event.type == pygame.KEYUP and event.key == pygame.K_s:
                 hero.change_v([0], [])
 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_a:
-                hero.change_v([], [-200])
+                hero.change_v([], [-300])
             if event.type == pygame.KEYUP and event.key == pygame.K_a:
                 hero.change_v([], [0])
 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_d:
-                hero.change_v([], [200])
+                hero.change_v([], [300])
             if event.type == pygame.KEYUP and event.key == pygame.K_d:
                 hero.change_v([], [0])
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                f = True
+            if f:
+                y, x = hero.get_coords()
+                wep.shoot((x + 10, y + 20), event.pos)
+            if event.type == pygame.MOUSEBUTTONUP:
+                f = False
     pygame.quit()
 
 # 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
