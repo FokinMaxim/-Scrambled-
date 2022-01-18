@@ -3,6 +3,8 @@ import sys
 import pygame
 import math
 
+FPS = 60
+
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('images', name)
@@ -21,88 +23,108 @@ def load_image(name, colorkey=None):
     return image
 
 
-class Entity:
-    def __init__(self, max_health, sprite): # + sprite
-        self.max_health, self.health = max_health, max_health
-        self.spr = sprite
-        self.V = [0, 0]  # y x
+class Entity(pygame.sprite.Sprite):
+    def __init__(self, speed, pos, health, image, vulnerability=True, *groups):
+        super().__init__(*groups)#спрайт группы
+        self.health = health
+        self.speed = speed
+        self.pos = pos
+        self.vul = vulnerability
+        self.image = load_image(image, -1)
+        self.rect = self.image.get_rect().move(pos)
+        self.vect = -1 # вектор передвижения (синус и косинус для скорости по x и y, -1 значит что вектора нет)
 
     def move(self):
-        global t, screen
-        screen.fill((0, 0, 0))
-        x = self.spr.rect.x
-        y = self.spr.rect.y
-        x_pos, y_pos = (x + self.V[1] * t / 100), (y + self.V[0] * t / 100)
-        self.spr.rect.x = x_pos
-        self.spr.rect.y = y_pos
-        #all_sprites.draw(screen)
+        if self.vect != -1:
+            vx = math.cos(self.vect) * self.speed
+            vy = math.sin(self.vect) * self.speed
+            self.pos = self.pos[0] + int(vx / FPS), self.pos[1] - int(vy / FPS)
+            self.rect.move_ip(int(vx / FPS), -int(vy / FPS))
 
-    def change_v(self, yv, xv):
-        if yv and not xv:
-            self.V = [yv[0], self.V[1]]
-        elif xv and not yv:
-            self.V = [self.V[0], xv[0]]
+    def set_pos(self, x, y):
+        print(self.pos, x, y)
+        self.rect.x, self.rect.y = x, y
+        self.pos = x, y
 
-    def get_v(self):
-        return self.V
+    def damaged(self, damage):
+        if self.vul:
+            self.health -= damage
+            if self.health <= 0:
+                self.kill()# убит
+                #TODO дорисовать смэрт
 
-    def pos(self):
-        return self.spr.rect.y, self.spr.rect.x
 
 class Hero(Entity):
-    pass
+    def __init__(self, speed, pos, health, image, vulnerability=True, *groups):
+        super().__init__(speed, pos, health, image, vulnerability, *groups)
+        self.hearts_points = int(self.health / 2)
+        self.hearts = [load_image('heart1.png', -1), load_image('heart0.5.png', -1), load_image('heart0.png', -1)]
+        self.last_pos_y = 0
+        self.last_pos_x = 0
+        self.jo = [load_image('jo1.png', -1), load_image('jo2.png', -1), load_image('jo3.png', -1),
+                   load_image('jo4.png', -1), load_image('jo5.png', -1), load_image('jo6.png', -1)]
 
-if __name__ == '__main__':
-    pygame.init()
-    pygame.display.set_caption('игра')
-    size = width, height = 400, 400
-    screen = pygame.display.set_mode(size)
-    fps = 60
-    clock = pygame.time.Clock()
-    f = False
+    def img_update(self, mpos):
+        pos = (self.pos[0] + 24, self.pos[1] + 48)
+        x = mpos[0] - pos[0]
+        y = mpos[1] - pos[1]
+        gip = (x ** 2 + y ** 2) ** (1/2)
+        si = y / gip
+        co = x / gip
+        if 0.5 <= co <= 1:
+            if si <= 0:
+                self.image = self.jo[2]
+            else:
+                self.image = self.jo[1]
+        elif -0.5 >= co >= -1:
+            if si <= 0:
+                self.image = self.jo[4]
+            else:
+                self.image = self.jo[5]
+        else:
+            if si <= 0:
+                self.image = self.jo[3]
+            else:
+                self.image = self.jo[0]
+        self.rect = self.image.get_rect().move(self.pos)
 
-    entity_list = []
-    all_sprites = pygame.sprite.Group()
-    hero_sprite = pygame.sprite.Sprite()
-    hero_sprite.image = load_image("dude.png", colorkey=-1)
-    hero_sprite.rect = hero_sprite.image.get_rect()
-    hero_sprite.rect.x = 5
-    hero_sprite.rect.y = 20
-    all_sprites.add(hero_sprite)
-    all_sprites.draw(screen)
-    hero = Hero(20, hero_sprite)
-    entity_list.append(hero)
+    def vector_update(self, keys):
+        self.vect = -1
+        if keys[pygame.K_w]:
+            self.vect = 0.5 * math.pi
+        if keys[pygame.K_a]:
+            self.vect = 1 * math.pi
+        if keys[pygame.K_d]:
+            self.vect = 0 * math.pi
+        if keys[pygame.K_s]:
+            self.vect = 1.5 * math.pi
+        if keys[pygame.K_w] and keys[pygame.K_d]:
+            self.vect = 0.25 * math.pi
+        if keys[pygame.K_w] and keys[pygame.K_a]:
+            self.vect = 0.75 * math.pi
+        if keys[pygame.K_s] and keys[pygame.K_a]:
+            self.vect = 1.25 * math.pi
+        if keys[pygame.K_s] and keys[pygame.K_d]:
+            self.vect = 1.75 * math.pi
 
-    running = True
-    while running:
-        pygame.display.flip()
-        t = clock.tick()
-        for i in entity_list:
-            i.move()
-        clock.tick(fps)
-        all_sprites.draw(screen)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+        if keys[pygame.K_v]:
+            self.damaged(1)
 
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_w:
-                hero.change_v([-300], [])
-            if event.type == pygame.KEYUP and event.key == pygame.K_w:
-                hero.change_v([0], [])
+    def damaged(self, damage):
+        if self.vul:
+            self.health -= 1
+            if self.health <= 0:
+                self.kill()# убит
+                #TODO можно нарисовать гробик
 
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_s:
-                hero.change_v([300], [])
-            if event.type == pygame.KEYUP and event.key == pygame.K_s:
-                hero.change_v([0], [])
+    def draw_hearts(self, screen):
+        h = self.health
+        for i in range(self.hearts_points):
+            if h - i * 2 >= 2:
+                screen.blit(self.hearts[0], (25 + i * 35, 25))
+            elif h - i * 2 == 1:
+                screen.blit(self.hearts[1], (25 + i * 35, 25))
+            elif h - i * 2 <= 0:
+                screen.blit(self.hearts[2], (25 + i * 35, 25))
+            #TODO рисовка МОНЕТОК
 
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_a:
-                hero.change_v([], [-300])
-            if event.type == pygame.KEYUP and event.key == pygame.K_a:
-                hero.change_v([], [0])
-
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_d:
-                hero.change_v([], [300])
-            if event.type == pygame.KEYUP and event.key == pygame.K_d:
-                hero.change_v([], [0])
-
-    pygame.quit()
