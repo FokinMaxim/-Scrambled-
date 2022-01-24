@@ -164,12 +164,55 @@ class Hero(Entity):
         self.rect = self.image.get_rect().move(self.pos)
 
 
-class Enemy(Entity):
-    def __init__(self, speed, pos, health, image, vulnerability=True,  *groups):
-        super().__init__(speed, pos, health, image, vulnerability, *groups)
-        self.hearts_points = int(self.health / 2)
+class Enemy(Entity):  # Максим
+    def creating_vector(self, hero_pos):
+        delta = (hero_pos[0] - self.pos[0], hero_pos[1] - self.pos[1])
+        cos = delta[1] / math.sqrt(delta[1] ** 2 + delta[0] ** 2)
+        if delta[0] < 0:
+            self.vect = math.asin(cos) + math.pi
+        else:
+            self.vect = math.asin(cos) * -1
+
+
+class Shooting_enemy(Entity):  # Максим
+    def __init__(self, speed, pos, health, image, vulnerability=True, *groups):
+        super().__init__(speed, pos, health, image, *groups)#спрайт группы
         self.armed = []
-        self.last_pos_y = 0
-        self.last_pos_x = 0
-        self.jo = [load_image('jo1.png', -1), load_image('jo2.png', -1), load_image('jo3.png', -1),
-                   load_image('jo4.png', -1), load_image('jo5.png', -1), load_image('jo6.png', -1)]
+        self.health = health
+        self.speed = speed
+        self.pos = pos
+        self.armed = []
+        self.vul = vulnerability
+        self.image = load_image(image, -1)
+        self.rect = self.image.get_rect().move(pos)
+        self.vect = -1 # вектор передвижения (синус и косинус для скорости по x и y)
+        self.last = None
+
+    def creating_vector(self, hero_pos):
+        delta = (hero_pos[0] - self.pos[0], hero_pos[1] - self.pos[1])
+        if abs(delta[0]) > 400 or abs(delta[1]) > 400:
+            cos = delta[1] / math.sqrt(delta[1] ** 2 + delta[0] ** 2)
+            if delta[0] < 0:
+                self.vect = math.asin(cos) + math.pi
+            else:
+                self.vect = math.asin(cos) * -1
+        else:
+            if not self.last:
+                self.last = pygame.time.get_ticks()
+            now = pygame.time.get_ticks()
+            if now - self.last >= 5000:
+                self.vect = -1
+                self.shoot(self.pos, hero_pos)
+                self.last = pygame.time.get_ticks()
+
+
+
+    def move(self):
+        if self.vect != -1:
+            vx = math.cos(self.vect) * self.speed
+            vy = math.sin(self.vect) * self.speed
+            self.pos = self.pos[0] + int(vx / FPS), self.pos[1] - int(vy / FPS)
+            print(self.pos, self.rect)
+            self.rect.move_ip(int(vx / FPS), -int(vy / FPS))
+            if self.armed:
+                self.armed[0].change_coords((self.pos[0]+35, self.pos[1]+65))

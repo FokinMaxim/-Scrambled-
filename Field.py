@@ -1,12 +1,12 @@
 import pygame
 import pytmx
 import math
-from nt_hero import Hero, Entity, Bullet, load_image
+from nt_hero import Hero, Entity, Bullet, load_image, Enemy, Shooting_enemy
 
 
 
 TILE_SIZE = 64
-WIND_SIZE = WIND_WIDTH, WIND_HEIGHT = 1000, 1000
+WIND_SIZE = WIND_WIDTH, WIND_HEIGHT = 1500, 1000
 FPS = 80
 MAPS_DIR = 'тайлы'
 
@@ -124,10 +124,16 @@ def main():
     running = True
     gameover = False
     hero = Hero(120, (500, 500), 100, 'jo1.png', True, all_sprites, hero_sprite, moving_objects)
-    entity_list.append(hero)
-    wep = Weapon(500, 500, 'tomato_gun.png', 'tomato_bullet.png', all_sprites, moving_objects)
+    wep = Weapon(500, 500, 'max_gun.png', 'max_bullet.png', all_sprites, moving_objects)
+    wep1 = Weapon(800, 700, 'max_gun.png', 'max_bullet.png', all_sprites, moving_objects)
+    angry_dude = Enemy(120, (700, 700), 20, 'slime.png', True, all_sprites, moving_objects)
+    shooting_guge = Shooting_enemy(120, (800, 700), 20, 'dark_knight.png', True, all_sprites, moving_objects)
     wep_list.append(wep)
-    
+    entity_list.append(hero)
+    entity_list.append(shooting_guge)
+    shooting_guge.equip(wep1)
+    entity_list.append(angry_dude)
+
 
     while running:
         for event in pygame.event.get():
@@ -149,6 +155,8 @@ def main():
                     hero.equip(i)
 
         for i in entity_list:
+            if type(i) == Enemy or type(i) == Shooting_enemy:
+                i.creating_vector(hero.get_pos())
             i.move()
 
         if len(pygame.sprite.spritecollide(hero, horizontal_borders, False, pygame.sprite.collide_rect)) == 0:
