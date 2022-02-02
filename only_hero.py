@@ -4,8 +4,9 @@ import sys
 import pygame
 import math
 from Weapon import Bullet
+from Items import Heart_item, Money_item
 from sprite_groups import all_sprites, horizontal_borders, vertical_borders, hero_sprite, floor_sprites, item_group, \
-    enemu_bullets, hero_bullets, death, enemus, entity_list, enemy_list, wep_list, item_list
+    enemu_bullets, hero_bullets, death, enemus, entity_list, enemy_list, wep_list, item_list, spawn, clear
 
 FPS = 60
 
@@ -41,14 +42,15 @@ def load_image(name, colorkey=None):
 
 class Entity(pygame.sprite.Sprite):
     def __init__(self, speed, pos, health, image, vulnerability=True, *groups):
-        super().__init__(*groups)#спрайт группы
+        super().__init__(*groups)  # спрайт группы
         self.health = health
         self.speed = speed
         self.pos = pos
         self.vul = vulnerability
         self.image = load_image(image, -1)
         self.rect = self.image.get_rect().move(pos)
-        self.vect = -1 # вектор передвижения (синус и косинус для скорости по x и y, -1 значит что вектора нет)
+        self.vect = -1  # вектор передвижения (синус и косинус для скорости по x и y, -1 значит что вектора нет)
+        self.s = [0, 1, 2] # для генерации предметов
 
     def move(self):
         if self.vect != -1:
@@ -65,10 +67,17 @@ class Entity(pygame.sprite.Sprite):
         if self.vul:
             self.health -= damage
             if self.health <= 0:
-                self.kill()# убит
+                e = random.choice(self.s)
+                if e == 0:
+                    a = Money_item((self.pos[0] + 18, self.pos[1] + 30), item_group)
+                    item_list.append(a)
+                if e == 1:
+                    a = Heart_item((self.pos[0] + 10, self.pos[1] + 20), item_group)
+                    item_list.append(a)
+                self.kill()  # убит
                 if self in enemy_list:
                     enemy_list.remove(self)
-                #TODO дорисовать смэрт
+                # TODO дорисовать смэрт
 
 
 class Hero(Entity):
@@ -91,7 +100,7 @@ class Hero(Entity):
         pos = (self.pos[0] + 24, self.pos[1] + 48)
         x = mpos[0] - pos[0]
         y = mpos[1] - pos[1]
-        gip = (x ** 2 + y ** 2) ** (1/2)
+        gip = (x ** 2 + y ** 2) ** (1 / 2)
         if not gip:
             gip = 0.0001
         si = y / gip
@@ -148,7 +157,7 @@ class Hero(Entity):
         if self.vul and now - self.last_damage >= 500:
             self.health -= 1
             if self.health <= 0:
-                self.kill()# убит
+                self.kill()  # убит
                 img = load_image('jorik.png', -1)
                 sp = pygame.sprite.Sprite()
                 sp.image = img
@@ -159,11 +168,12 @@ class Hero(Entity):
             self.last_damage = pygame.time.get_ticks()
 
     def equip(self, gun):
-        x_e, y_e = self.rect.x, self.rect.y
-        x_g, y_g = gun.rect.x, gun.rect.y
-        delta = x_e - x_g + 5, y_e - y_g + 10
-        if delta[0] < 60 and delta[1] < 60:
+        x_e, y_e = self.rect.x + 24, self.rect.y + 48
+        x_g, y_g = gun.rect.x + 20, gun.rect.y + 9
+        delta = ((x_e - x_g) ** 2 + (y_e - y_g) ** 2) ** 0.5
+        if delta < 60:
             self.armed.append(gun)
+            gun.kill()
 
     def shoot(self, gr):
         if self.armed:
@@ -195,13 +205,14 @@ class Hero(Entity):
 
 
 class Enemy(Entity):  # Максим
-    def __init__(self, speed, pos, health, image, vulnerability=True, *groups):
-        super().__init__(speed, pos, health, image, vulnerability, *groups)
+    def __init__(self, speed, pos, health, image):
+        super().__init__(speed, pos, health, image, True, enemus, all_sprites)
         self.images = [load_image('slime1.png', -1), load_image('slime2.png', -1),
-                       load_image('slime3.png', -1), load_image('slime4.png', -1)]
-        self.images2 = [pygame.transform.flip(i, True, False)for i in self.images]
+                       load_image('slime3.png', -1), load_image('slime4.png', -1), load_image('slimeD.png', -1)]
+        self.images2 = [pygame.transform.flip(i, True, False) for i in self.images]
         self.framer = 0
         self.stoped = 0
+        self.last_dmg = pygame.time.get_ticks() - 500
 
     def creating_vector(self, hero_pos):
         self.framer += 1
@@ -214,9 +225,13 @@ class Enemy(Entity):  # Максим
         if delta[0] < 0:
             self.vect = math.asin(sin) + math.pi
             self.image = self.images2[f]
+            if pygame.time.get_ticks() - self.last_dmg < 300:
+                self.image = self.images2[4]
         else:
             self.vect = - math.asin(sin)
             self.image = self.images[f]
+            if pygame.time.get_ticks() - self.last_dmg < 300:
+                self.image = self.images[4]
 
     def move(self):
         now = pygame.time.get_ticks()
@@ -229,17 +244,35 @@ class Enemy(Entity):  # Максим
     def stop(self, time):
         self.stoped = pygame.time.get_ticks() + time
 
+    def damaged(self, damage):
+        if self.vul:
+            self.health -= damage
+            self.stop(300)
+            self.image = self.images[4]
+            self.last_dmg = pygame.time.get_ticks()
+            if self.health <= 0:
+                e = random.choice(self.s)
+                if e == 0:
+                    a = Money_item((self.pos[0] + 18, self.pos[1] + 30), item_group)
+                    item_list.append(a)
+                if e == 1:
+                    a = Heart_item((self.pos[0] + 10, self.pos[1] + 20), item_group)
+                    item_list.append(a)
+                self.kill()  # убит
+                if self in enemy_list:
+                    enemy_list.remove(self)
+                # TODO дорисовать смэрт
+
 
 class Shooting_enemy(Entity):  # Максим
-    def __init__(self, speed, pos, health,  m_o, image, shooting_im, vulnerability=True):
-        super().__init__(speed, pos, health, image, vulnerability, all_sprites, enemus)  # спрайт группы
+    def __init__(self, speed, pos, health, image, shooting_im):
+        super().__init__(speed, pos, health, image, True, all_sprites, enemus)  # спрайт группы
         self.vect = -1  # вектор передвижения (синус и косинус для скорости по x и y)
         self.last = pygame.time.get_ticks()
         self.images = [load_image('magikan1.png', -1), load_image('magikan2.png', -1),
                        load_image('magikan3.png', -1), load_image('magikan4.png', -1)]
         self.images2 = [pygame.transform.flip(i, True, False) for i in self.images]
         self.framer = 0
-        self.moving_objects = m_o
         self.shoot_im = shooting_im
         self.bull = load_image('bullet.png', colorkey=-1)
         self.stoped = 0
@@ -288,3 +321,65 @@ class Shooting_enemy(Entity):  # Максим
             bullet_sprite.rect = bullet_sprite.image.get_rect()
             enemu_bullets.add(bullet_sprite)
             entity_list.append(Bullet(coords, bullet_sprite, vector=vec * i + n, speed=2, rico=0))
+
+
+class Spawner(pygame.sprite.Sprite):
+    def __init__(self, pos, time):
+        super().__init__(death, all_sprites)  # спрайт группы
+        self.pos = pos
+        self.image = load_image('sp.png', -1)
+        self.rect = self.image.get_rect().move(pos)
+        self.time = time
+        self.last = pygame.time.get_ticks()
+
+    def spawn(self):
+        if pygame.time.get_ticks() - self.last >= self.time:
+            if random.randint(0, 1):
+                e = Enemy(100, (self.pos[0] + 10, self.pos[1]), 20, 'slime1.png')
+            else:
+                e = Shooting_enemy(80, (self.pos[0] + 10, self.pos[1]), 14, 'magikan1.png', 'bullet.png')
+            enemy_list.append(e)
+            spawn.remove(self)
+            self.kill()
+
+class Door(pygame.sprite.Sprite):
+    def __init__(self, pos):
+        super().__init__(death, all_sprites)  # спрайт группы
+        self.pos = pos
+        self.images = [load_image('doora1.png', -1), load_image('doora2.png', -1), load_image('doora3.png', -1),
+                       load_image('doora4.png', -1), load_image('doora5.png', -1)]
+        self.image = self.images[0]
+        self.rect = self.image.get_rect().move(pos)
+        self.last = pygame.time.get_ticks()
+        self.framer = 0
+        self.f = True
+        self.perehod = False
+
+    def open(self, pos):
+        posi = pos[0] + 24, pos[1] + 48
+        if ((posi[0] - self.pos[0] - 50) ** 2 + (posi[1] - self.pos[1] - 100) ** 2) ** 0.5 <= 150:
+            self.f = False
+        else:
+            self.f = True
+        if not self.f:
+            self.framer += 1
+            f = self.framer // 20
+            if f > 4:
+                f = 4
+                self.framer = 80
+            self.image = self.images[f]
+        else:
+            self.framer -= 1
+            f = self.framer // 20
+            if f < 0:
+                f = 0
+                self.framer = 0
+            self.image = self.images[f]
+
+    def come(self, pos):
+        posi = pos[0] + 24, pos[1] + 48
+        if ((posi[0] - self.pos[0] - 50) ** 2 + (posi[1] - self.pos[1] - 100) ** 2) ** 0.5 <= 150:
+            #переход в другую комнату
+            self.perehod = True
+
+

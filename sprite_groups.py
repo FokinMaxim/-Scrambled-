@@ -15,3 +15,29 @@ item_list = []
 wep_list = []
 entity_list = []
 enemy_list = []
+spawn = []
+rooms = []
+
+
+def clear():
+    for i in horizontal_borders:
+        i.kill()
+    for i in vertical_borders:
+        i.kill()
+    for i in floor_sprites:
+        i.kill()
+    for i in item_group:
+        i.kill()
+    for i in enemu_bullets:
+        i.kill()
+    for i in hero_bullets:
+        i.kill()
+    for i in enemus:
+        i.kill()
+    for i in death:
+        i.kill()
+    item_list.clear()
+    wep_list.clear()
+    entity_list.clear()
+    enemy_list.clear()
+    spawn.clear()
