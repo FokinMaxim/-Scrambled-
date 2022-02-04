@@ -2,15 +2,19 @@ import random
 import time
 import pygame
 import pytmx
-from win32api import GetSystemMetrics
+#from win32api import GetSystemMetrics
 
+from  start_scr import records, start_screen
+from end_scr import end_screen
 from Weapon import Weapon
 from only_hero import Hero, Spawner, Door
 from sprite_groups import all_sprites, horizontal_borders, vertical_borders, hero_sprite, floor_sprites, item_group, \
     enemu_bullets, hero_bullets, death, enemus, entity_list, item_list, wep_list, enemy_list, spawn, rooms, clear
 
 WIND_SIZE = WIND_WIDTH, WIND_HEIGHT = GetSystemMetrics(0), GetSystemMetrics(1) - 60
+#1500, 900
 FPS = 80
+KILLS = 0
 MAPS_DIR = 'тайлы'
 
 
@@ -108,7 +112,8 @@ def door():
     while not pygame.sprite.spritecollideany(a, floor_sprites) or \
                 pygame.sprite.spritecollideany(a, vertical_borders) or \
                 pygame.sprite.spritecollideany(a, horizontal_borders) or \
-                pygame.sprite.spritecollideany(a, hero_sprite) or pygame.sprite.spritecollideany(a, entity_list):
+                pygame.sprite.spritecollideany(a, hero_sprite) :
+        #or pygame.sprite.spritecollideany(a, entity_list)
         a.kill()
         a = Door((random.randint(0, WIND_WIDTH), random.randint(0, WIND_HEIGHT // 2)))
     return a
@@ -120,10 +125,12 @@ def main():
     screen = pygame.display.set_mode(WIND_SIZE)
     rooms += [Room('1.tmx'), Room('2.tmx'), Room('3.tmx'), Room('4.tmx'), Room('5.tmx')]
     running = True
+    new_game = False
     shooot = False
     clock = pygame.time.Clock()
     d = Door((-1000, -1000))
     mouse_pos = (0, 0)# чтоб работало
+    start_screen()
 
     room = Room('start.tmx')# чтоб была первая комнота
     room.creating_sprites()
@@ -204,14 +211,38 @@ def main():
             hero.draw_hearts()
             pygame.display.flip()
             clock.tick(FPS)
-        clear()
-        room = random.choice(rooms)
-        room.creating_sprites()
-        vawes = random.randint(2, 5)
-        hero.pos = ((random.randint(700, 1000), random.randint(400, 800)))
-        d = Door((-1000, -1000))
-        screen.fill((8, 10, 10))
-        pygame.display.flip()
+
+            if not hero.vul:
+                pygame.time.delay(2000)
+                new_game = True
+                t = pygame.time.get_ticks() // 1000
+                end_screen('dude', t, hero.mon, KILLS)
+
+                #item_list, wep_list, entity_list, enemy_list, spawn, rooms = [], [], [], [], [], []
+                rooms = []
+                clear()
+                room = Room('start.tmx')  # чтоб была первая комнота
+                rooms += [Room('1.tmx'), Room('2.tmx'), Room('3.tmx'), Room('4.tmx'), Room('5.tmx')]
+                room.creating_sprites()
+                hero = Hero(screen, 150, (900, 500), 10, 'jo1.png', 0, True, all_sprites, hero_sprite)
+                wep = Weapon(600, 500, 'gun.png', 'H_bullet.png', entity_list)
+                wep_list.append(wep)
+                vawes = 0
+                break
+
+        if not new_game:
+            clear()
+            room = random.choice(rooms)
+            room.creating_sprites()
+            vawes = random.randint(2, 5)
+            hero.pos = ((random.randint(700, 1000), random.randint(400, 800)))
+            d = Door((-1000, -1000))
+            screen.fill((8, 10, 10))
+            pygame.display.flip()
+            shooot = False
+            d = Door((-1000, -1000))
+        else:
+            new_game = False
         if running:
             time.sleep(2)
 main()
