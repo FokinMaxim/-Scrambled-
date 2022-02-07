@@ -11,7 +11,7 @@ from only_hero import Hero, Spawner, Door
 from sprite_groups import all_sprites, horizontal_borders, vertical_borders, hero_sprite, floor_sprites, item_group, \
     enemu_bullets, hero_bullets, death, enemus, entity_list, item_list, wep_list, enemy_list, spawn, rooms, clear, KILLS
 
-WIND_SIZE = WIND_WIDTH, WIND_HEIGHT = 1800, 900
+WIND_SIZE = WIND_WIDTH, WIND_HEIGHT = 1500, 900
 #GetSystemMetrics(0), GetSystemMetrics(1) - 60
 FPS = 80
 
