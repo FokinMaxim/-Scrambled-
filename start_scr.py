@@ -2,6 +2,7 @@ import pygame
 from PyQt5.QtWidgets import QDialog, QApplication
 from PyQt5 import uic, QtWidgets
 from only_hero import load_image
+from nameinput import getting_name, InputBox
 import sys
 import sqlite3
 
@@ -25,20 +26,32 @@ def start_screen():
         pygame.display.flip()
         clock.tick(FPS)
 
+    btm_quest = pygame.sprite.Sprite()
+    btms = pygame.sprite.Group()
+    btms.add(btm_quest)
+    btm_quest.image = load_image('help.png', -1)
+    btm_quest.rect = btm_quest.image.get_rect().move((570, 300))
+    btms.draw(screen)
 
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
             elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.pos[0] > 570 and event.pos[0] < 610:
+                    if event.pos[1] > 300 and event.pos[1] < 358:
+                        name = help_screen()
+                        return name
                 if event.pos[0] > 50 and event.pos[0] < 470:
                     if event.pos[1] > 255 and event.pos[1] < 370:
                         print('play')
-                        return
+                        name = getting_name()
+                        print(name)
+                        return name
 
                     elif event.pos[1] > 450 and event.pos[1] < 590:
-                        records()
-                        #return
+                        name = records()
+                        return name
 
                     elif event.pos[1] > 645 and event.pos[1] < 815:
                         print('esc')
@@ -106,23 +119,45 @@ def records():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.pos[0] > 55 and event.pos[0] < 255:
                     if event.pos[1] > 750 and event.pos[1] < 800:
-                        start_screen()
-                        return
+                        name = start_screen()
+                        return name
 
         pygame.display.flip()
         clock.tick(FPS)
 
-class Pre_play(QDialog):
-    def __init__(self):
-        super().__init__()
-        uic.loadUi("name.ui", self)
-        self.nam = ''
-        self.but.clicked.connect(self.get_nam)
 
-    def get_nam(self):
-        self.nam = self.line.text()
-        print(self.nam)
-        return self.nam
+
+def help_screen():
+    skale = 0.1
+    while skale * WIND_WIDTH < WIND_WIDTH:
+        skale += 1.25 / FPS
+        fon = pygame.transform.scale(load_image('question.png'), (WIND_WIDTH * skale, WIND_HEIGHT * skale))
+        screen.blit(fon, ((WIND_WIDTH - (WIND_WIDTH * skale))//2, (WIND_HEIGHT - (WIND_HEIGHT * skale))//2))
+        pygame.display.flip()
+        clock.tick(FPS)
+
+    btm_quest = pygame.sprite.Sprite()
+    btms = pygame.sprite.Group()
+    btms.add(btm_quest)
+    btm_quest.image = load_image('name.png')
+    btm_quest.rect = btm_quest.image.get_rect().move((100, 700))
+    btms.draw(screen)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.pos[0] > 100 and event.pos[0] < 164:
+                    if event.pos[1] > 700 and event.pos[1] < 736:
+                        name = start_screen()
+                        return name
+
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
 
 def main():
     pygame.init()

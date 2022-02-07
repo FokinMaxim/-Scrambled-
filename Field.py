@@ -4,17 +4,17 @@ import pygame
 import pytmx
 #from win32api import GetSystemMetrics
 
-from  start_scr import records, start_screen
+from start_scr import records, start_screen
 from end_scr import end_screen
 from Weapon import Weapon
 from only_hero import Hero, Spawner, Door
 from sprite_groups import all_sprites, horizontal_borders, vertical_borders, hero_sprite, floor_sprites, item_group, \
-    enemu_bullets, hero_bullets, death, enemus, entity_list, item_list, wep_list, enemy_list, spawn, rooms, clear
+    enemu_bullets, hero_bullets, death, enemus, entity_list, item_list, wep_list, enemy_list, spawn, rooms, clear, KILLS
 
-WIND_SIZE = WIND_WIDTH, WIND_HEIGHT = GetSystemMetrics(0), GetSystemMetrics(1) - 60
-#1500, 900
+WIND_SIZE = WIND_WIDTH, WIND_HEIGHT = 1500, 900
+#GetSystemMetrics(0), GetSystemMetrics(1) - 60
 FPS = 80
-KILLS = 0
+
 MAPS_DIR = 'тайлы'
 
 
@@ -120,7 +120,7 @@ def door():
 
 
 def main():
-    global rooms
+    global rooms, KILLS
     pygame.init()
     screen = pygame.display.set_mode(WIND_SIZE)
     rooms += [Room('1.tmx'), Room('2.tmx'), Room('3.tmx'), Room('4.tmx'), Room('5.tmx')]
@@ -130,7 +130,7 @@ def main():
     clock = pygame.time.Clock()
     d = Door((-1000, -1000))
     mouse_pos = (0, 0)# чтоб работало
-    start_screen()
+    NAME = start_screen()
 
     room = Room('start.tmx')# чтоб была первая комнота
     room.creating_sprites()
@@ -184,7 +184,7 @@ def main():
                     i.stop(750)
 
             for i in entity_list:
-                i.move(hero)
+                KILLS = i.move(hero, KILLS)
 
             for i in enemy_list:
                 i.creating_vector((hero.rect.x, hero.rect.y))
@@ -216,9 +216,8 @@ def main():
                 pygame.time.delay(2000)
                 new_game = True
                 t = pygame.time.get_ticks() // 1000
-                end_screen('dude', t, hero.mon, KILLS)
-
-                #item_list, wep_list, entity_list, enemy_list, spawn, rooms = [], [], [], [], [], []
+                print(KILLS)
+                end_screen(NAME, t, hero.mon, KILLS)
                 rooms = []
                 clear()
                 room = Room('start.tmx')  # чтоб была первая комнота

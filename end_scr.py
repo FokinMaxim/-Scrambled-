@@ -20,7 +20,7 @@ def end_screen(name, time, money, kills):
     cur = con.cursor()
     result = cur.execute("""SELECT score FROM records""").fetchall()
     if not result:
-        result = [0]
+        result = [[0]]
     intro_text = [("ВЫ ПРОИГРАЛИ...опять", (180, 80)),
                   (f"Времени просрано: {time} секунд", (70, 240)),
                   (f"Нереальных денег: {money}", (70, 320)),

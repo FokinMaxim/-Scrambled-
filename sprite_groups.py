@@ -17,6 +17,7 @@ entity_list = []
 enemy_list = []
 spawn = []
 rooms = []
+KILLS = 0
 
 
 def clear():

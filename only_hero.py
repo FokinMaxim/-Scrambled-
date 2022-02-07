@@ -6,7 +6,7 @@ import math
 from Weapon import Bullet
 from Items import Heart_item, Money_item
 from sprite_groups import all_sprites, horizontal_borders, vertical_borders, hero_sprite, floor_sprites, item_group, \
-    enemu_bullets, hero_bullets, death, enemus, entity_list, enemy_list, wep_list, item_list, spawn, clear
+    enemu_bullets, hero_bullets, death, enemus, entity_list, enemy_list, wep_list, item_list, spawn, clear, KILLS
 
 FPS = 60
 
@@ -63,11 +63,13 @@ class Entity(pygame.sprite.Sprite):
         self.rect.x, self.rect.y = x, y
         self.pos = x, y
 
-    def damaged(self, damage):
+    def damaged(self, damage, KILLS):
         if self.vul:
             self.health -= damage
             if self.health <= 0:
+                KILLS += 1
                 e = random.choice(self.s)
+                print(KILLS)
                 if e == 0:
                     a = Money_item((self.pos[0] + 18, self.pos[1] + 30), item_group)
                     item_list.append(a)
@@ -78,6 +80,7 @@ class Entity(pygame.sprite.Sprite):
                 if self in enemy_list:
                     enemy_list.remove(self)
                 # TODO дорисовать смэрт
+        return KILLS
 
 
 class Hero(Entity):
@@ -244,13 +247,14 @@ class Enemy(Entity):  # Максим
     def stop(self, time):
         self.stoped = pygame.time.get_ticks() + time
 
-    def damaged(self, damage):
+    def damaged(self, damage, KILLS):
         if self.vul:
             self.health -= damage
             self.stop(300)
             self.image = self.images[4]
             self.last_dmg = pygame.time.get_ticks()
             if self.health <= 0:
+                KILLS += 1
                 e = random.choice(self.s)
                 if e == 0:
                     a = Money_item((self.pos[0] + 18, self.pos[1] + 30), item_group)
@@ -261,6 +265,7 @@ class Enemy(Entity):  # Максим
                 self.kill()  # убит
                 if self in enemy_list:
                     enemy_list.remove(self)
+        return KILLS
                 # TODO дорисовать смэрт
 
 

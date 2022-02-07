@@ -33,7 +33,7 @@ class Bullet:
         self.spr = spr
         self.spr.rect.x, self.spr.rect.y = self.pos
 
-    def move(self, hero):
+    def move(self, hero, KILLS):
         self.pos = (self.pos[0] + self.vect[0] * self.speed, self.pos[1] - self.vect[1] * self.speed)
         self.spr.rect.x, self.spr.rect.y = int(self.pos[0]), int(self.pos[1])
         if len(pygame.sprite.spritecollide(self.spr, vertical_borders, False, pygame.sprite.collide_rect)) != 0:
@@ -61,7 +61,8 @@ class Bullet:
                 s = pygame.sprite.Group()
                 s.add(i)
                 if len(pygame.sprite.spritecollide(self.spr, s, False, pygame.sprite.collide_rect)) != 0:
-                    i.damaged(2)
+                    print('nne', KILLS)
+                    KILLS = i.damaged(2, KILLS)
                     self.spr.kill()
                     if self in entity_list:
                         entity_list.remove(self)
@@ -73,7 +74,7 @@ class Bullet:
                 self.spr.kill()
                 if self in entity_list:
                     entity_list.remove(self)
-
+        return KILLS
 
 class Weapon(pygame.sprite.Sprite):
     def __init__(self, x, y, sprite, shooting_im, entity_list): # + sprite
