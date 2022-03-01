@@ -88,7 +88,9 @@ def getting_name():
                 if event.pos[0] > 600 and event.pos[0] < 662:
                     if event.pos[1] > 450 and event.pos[1] < 488:
                         #print(input_box1.text)
-                        return input_box1.text
+                        if input_box1.text != '':
+                            return input_box1.text
+
             input_box1.handle_event(event)
 
         input_box1.update()

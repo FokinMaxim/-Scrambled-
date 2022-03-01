@@ -50,7 +50,8 @@ def end_screen(name, time, money, kills):
         intro_rect.x, intro_rect.y = line[1][0] * 0.75 + WIND_WIDTH * 0.125, line[1][1]* 0.75 + WIND_HEIGHT * 0.125
         screen.blit(string_rendered, intro_rect)
     btms.draw(screen)
-    cur.execute("""INSERT INTO records(nam, score) VALUES(?, ?)""", (name, money))
+    print('asdsd', name, money)
+    cur.execute("""INSERT INTO records(nam, score) VALUES(?, ?)""", (name, money*3+kills))
     con.commit()
 
     while True:
@@ -61,11 +62,11 @@ def end_screen(name, time, money, kills):
                 if event.pos[0] > 355 and event.pos[0] < 555:
                     if event.pos[1] > 580 and event.pos[1] < 630:
                         print('main')
-                        start_screen()
-                        return
+                        name = start_screen()
+                        return name
 
                     if event.pos[1] > 670 and event.pos[1] < 720:
-                        return
+                        return name
         pygame.display.flip()
         clock.tick(FPS)
 

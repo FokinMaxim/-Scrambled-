@@ -128,6 +128,7 @@ def main():
     new_game = False
     shooot = False
     clock = pygame.time.Clock()
+    delta_time = 0
     d = Door((-1000, -1000))
     mouse_pos = (0, 0)# чтоб работало
     NAME = start_screen()
@@ -216,8 +217,10 @@ def main():
                 pygame.time.delay(2000)
                 new_game = True
                 t = pygame.time.get_ticks() // 1000
-                print(KILLS)
-                end_screen(NAME, t, hero.mon, KILLS)
+                #print(KILLS)
+                NAME = end_screen(NAME, t - delta_time, hero.mon, KILLS)
+                delta_time = t
+                KILLS = 0
                 rooms = []
                 clear()
                 room = Room('start.tmx')  # чтоб была первая комнота
